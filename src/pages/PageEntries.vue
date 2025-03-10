@@ -2,22 +2,37 @@
   <q-page>
     <div class="q-pa-md">
       <q-list bordered="" separator="">
-        <q-item v-for="entry in entries" :key="entry.id">
-          <q-item-section
-            class="text-weight-bold"
-            :class="useAmountColorClass(entry.amount)"
-          >
-            {{ entry.name }}
-          </q-item-section>
+        <q-slide-item
+          v-for="entry in entries" 
+          :key="entry.id"
+          @right="onEntrySlideRight($event, entry)"
+          left-color="positive" 
+          right-color="negative"
+        >
+          <!-- <template v-slot:left>
+            <q-icon name="done" />
+          </template> -->
+          <template v-slot:right>
+            <q-icon name="delete" />
+          </template>
 
-          <q-item-section
-            class="text-weight-bold"
-            :class="useAmountColorClass(entry.amount)"
-            side
-          >
-            {{ useCurrencify(entry.amount) }}
-          </q-item-section>
-        </q-item>
+          <q-item>
+            <q-item-section
+              class="text-weight-bold"
+              :class="useAmountColorClass(entry.amount)"
+            >
+              {{ entry.name }}
+            </q-item-section>
+
+            <q-item-section
+              class="text-weight-bold"
+              :class="useAmountColorClass(entry.amount)"
+              side
+            >
+              {{ useCurrencify(entry.amount) }}
+            </q-item-section>
+          </q-item>
+        </q-slide-item>
       </q-list>
     </div>
 
@@ -33,15 +48,24 @@
           {{ useCurrencify(balance) }} 
         </div>
       </div>
-      <div class="row q-px-sm q-pb-sm q-col-gutter-sm bg-primary">
+      <q-form
+        @submit="addEntry"
+        class="row q-px-sm q-pb-sm q-col-gutter-sm bg-primary">
         <div class="col">
-          <q-input outlined dense v-model="text" placeholder="Name" bg-color="white" />
+          <q-input 
+            outlined 
+            dense 
+            v-model="addEntryForm.name" 
+            ref="nameRef"
+            placeholder="Name" 
+            bg-color="white" 
+          />
         </div>
         <div class="col">
           <q-input
             outlined
             dense
-            v-model="text"
+            v-model.number="addEntryForm.amount" 
             placeholder="Amount"
             input-class="text-right"
             type="number"
@@ -50,9 +74,9 @@
           />
         </div>
         <div class="col col-auto">
-          <q-btn round color="primary" icon="add" />
+          <q-btn type="submit" round color="primary" icon="add" />
         </div>
-      </div>
+      </q-form>
     </q-footer>
   </q-page>
 </template>
@@ -61,9 +85,15 @@
 /* 
     imports
   */
-import { ref, computed } from "vue";
-import { useCurrencify } from "src/use/useCurrencify";
-import { useAmountColorClass } from "src/use/useAmountColorClass";
+  import { ref, computed, reactive } from "vue";
+  import { useCurrencify } from "src/use/useCurrencify";
+  import { useAmountColorClass } from "src/use/useAmountColorClass";
+  import { uid, useQuasar } from 'quasar';
+
+  /* 
+    quasar 
+  */
+  const $q = useQuasar()
 
   /* 
     entries
@@ -91,11 +121,73 @@ import { useAmountColorClass } from "src/use/useAmountColorClass";
     },
   ]);
 
+  const nameRef = ref(null)
+
   /* balance */
   const balance = computed(() => {
     return entries.value.reduce((accumulator, { amount }) => {
       return accumulator + amount
     }, 0)
   }); 
+
+  const addEntryFormDefault = {
+    name: '',
+    amount: null
+  }
+
+  /* add entry */
+  const addEntryForm = reactive({
+    ...addEntryFormDefault
+  })
+
+  const addEntryFormReset = () => {
+    Object.assign(addEntryForm, addEntryFormDefault)
+    nameRef.value.focus()
+  }
+
+  const addEntry = () => {
+    const newEntry = Object.assign({}, addEntryForm, { id: uid() })
+    entries.value.push(newEntry)
+    addEntryFormReset()
+  }
+
+  /* slide itens */
+  const onEntrySlideRight = ({reset}, entry) => {
+    $q.dialog({
+      title: 'Delete Entry',
+      message: `
+        Delete this entry??
+        <div class='q-mt-md text-weight-bold ${ useAmountColorClass (entry.amount) }'>
+          ${entry.name} : ${useCurrencify(entry.amount)}
+        </div>
+      `,
+      cancel: true,
+      persistent: true,
+      html: true,
+      ok: {  
+        label: 'Delete',
+        color: 'negative',
+        noCaps: true
+      },
+      cancel: {
+        color: 'primary',
+        noCaps: true
+      },
+    }).onOk(() => {
+      deleteEntry(entry.id)
+    }).onCancel(() => {
+      reset()
+    })
+  }
+
+  /* delete entry */
+  const deleteEntry = entryId => {
+    const index = entries.value.findIndex(entry => entryId === entry.id)
+    entries.value.splice(index, 1)
+    $q.notify({
+      message: 'Entry deleted',
+      position: 'top'
+    })
+  }
 
 </script>
