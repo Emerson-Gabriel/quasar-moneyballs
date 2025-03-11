@@ -1,82 +1,39 @@
 <template>
   <q-page>
     <div class="q-pa-md">
-      <q-list bordered="" separator="">
-        <q-slide-item
-          v-for="entry in entries" 
-          :key="entry.id"
-          @right="onEntrySlideRight($event, entry)"
-          left-color="positive" 
-          right-color="negative"
+      <transition
+        appear
+        enter-active-class="animated fadeIn jackInTheBox slower"
+      >
+        <NothingHere v-if="!storeEntries.entries.length" />
+      </transition>
+      <q-list 
+        v-if="storeEntries.entries.length"
+        class="entries"
+      >
+        <Sortable 
+          @end="storeEntries.sortEnd"
+          :list="storeEntries.entries" 
+          :options="{ handle: '.handle' }"
+          item-key="id" 
+          tag="div"
         >
-          <!-- <template v-slot:left>
-            <q-icon name="done" />
-          </template> -->
-          <template v-slot:right>
-            <q-icon name="delete" />
+          <template #item="{ element, index }">
+            <Entry :key="element.id" :entry="element" />
           </template>
-
-          <q-item>
-            <q-item-section
-              class="text-weight-bold"
-              :class="useAmountColorClass(entry.amount)"
-            >
-              {{ entry.name }}
-            </q-item-section>
-
-            <q-item-section
-              class="text-weight-bold"
-              :class="useAmountColorClass(entry.amount)"
-              side
-            >
-              {{ useCurrencify(entry.amount) }}
-            </q-item-section>
-          </q-item>
-        </q-slide-item>
+        </Sortable>
       </q-list>
     </div>
 
     <q-footer class="bg-transparent">
-      <div class="row q-mb-sm q-px-md q-py-sm shadow-up-4">
-        <div class="col text-grey-7 text-h6">
-          Balance
-        </div>
-        <div 
-          :class="useAmountColorClass(balance)"
-          class="col text-h6 text-right"
-          >
-          {{ useCurrencify(balance) }} 
-        </div>
-      </div>
-      <q-form
-        @submit="addEntry"
-        class="row q-px-sm q-pb-sm q-col-gutter-sm bg-primary">
-        <div class="col">
-          <q-input 
-            outlined 
-            dense 
-            v-model="addEntryForm.name" 
-            ref="nameRef"
-            placeholder="Name" 
-            bg-color="white" 
-          />
-        </div>
-        <div class="col">
-          <q-input
-            outlined
-            dense
-            v-model.number="addEntryForm.amount" 
-            placeholder="Amount"
-            input-class="text-right"
-            type="number"
-            step="0.01"
-            bg-color="white"
-          />
-        </div>
-        <div class="col col-auto">
-          <q-btn type="submit" round color="primary" icon="add" />
-        </div>
-      </q-form>
+        <transition
+          appear
+          enter-active-class="animated fadeIn slower"
+          leave-active-class="animated fadeOutDown"
+        >
+          <Balance v-if="storeEntries.entries.length" />
+        </transition>
+      <AddEntry />
     </q-footer>
   </q-page>
 </template>
@@ -85,109 +42,16 @@
 /* 
     imports
   */
-  import { ref, computed, reactive } from "vue";
-  import { useCurrencify } from "src/use/useCurrencify";
-  import { useAmountColorClass } from "src/use/useAmountColorClass";
-  import { uid, useQuasar } from 'quasar';
+import { useStoreEntries } from "src/stores/storeEntries";
+import Balance from "src/components/Entries/Balance.vue";
+import AddEntry from "src/components/Entries/AddEntry.vue";
+import Entry from "src/components/Entries/Entry.vue";
+import NothingHere from "src/components/Entries/NothingHere.vue";
+import { Sortable } from "sortablejs-vue3";
 
-  /* 
-    quasar 
+/*
+    stores
   */
-  const $q = useQuasar()
 
-  /* 
-    entries
-  */
-  const entries = ref([
-    {
-      id: "id0",
-      name: "Salário",
-      amount: 4999.99,
-    },
-    {
-      id: "id1",
-      name: "Aluguel",
-      amount: -99.0,
-    },
-    {
-      id: "id2",
-      name: "Telefone",
-      amount: -199.0,
-    },
-    {
-      id: "id3",
-      name: "Desconhecido",
-      amount: 0,
-    },
-  ]);
-
-  const nameRef = ref(null)
-
-  /* balance */
-  const balance = computed(() => {
-    return entries.value.reduce((accumulator, { amount }) => {
-      return accumulator + amount
-    }, 0)
-  }); 
-
-  const addEntryFormDefault = {
-    name: '',
-    amount: null
-  }
-
-  /* add entry */
-  const addEntryForm = reactive({
-    ...addEntryFormDefault
-  })
-
-  const addEntryFormReset = () => {
-    Object.assign(addEntryForm, addEntryFormDefault)
-    nameRef.value.focus()
-  }
-
-  const addEntry = () => {
-    const newEntry = Object.assign({}, addEntryForm, { id: uid() })
-    entries.value.push(newEntry)
-    addEntryFormReset()
-  }
-
-  /* slide itens */
-  const onEntrySlideRight = ({reset}, entry) => {
-    $q.dialog({
-      title: 'Delete Entry',
-      message: `
-        Delete this entry??
-        <div class='q-mt-md text-weight-bold ${ useAmountColorClass (entry.amount) }'>
-          ${entry.name} : ${useCurrencify(entry.amount)}
-        </div>
-      `,
-      cancel: true,
-      persistent: true,
-      html: true,
-      ok: {  
-        label: 'Delete',
-        color: 'negative',
-        noCaps: true
-      },
-      cancel: {
-        color: 'primary',
-        noCaps: true
-      },
-    }).onOk(() => {
-      deleteEntry(entry.id)
-    }).onCancel(() => {
-      reset()
-    })
-  }
-
-  /* delete entry */
-  const deleteEntry = entryId => {
-    const index = entries.value.findIndex(entry => entryId === entry.id)
-    entries.value.splice(index, 1)
-    $q.notify({
-      message: 'Entry deleted',
-      position: 'top'
-    })
-  }
-
+const storeEntries = useStoreEntries();
 </script>
