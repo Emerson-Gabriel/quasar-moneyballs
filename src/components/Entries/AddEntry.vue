@@ -11,7 +11,7 @@
         ref="nameRef"
         placeholder="Name"
         v-select-all
-        bg-color="white"
+        :bg-color="useLightOrDark('white', 'black')"
       />
     </div>
     <div class="col">
@@ -24,7 +24,7 @@
         type="number"
         v-select-all
         step="0.01"
-        bg-color="white"
+        :bg-color="useLightOrDark('white', 'black')"
       />
     </div>
     <div class="col col-auto">
@@ -33,14 +33,15 @@
   </q-form>
 </template>
 <script setup>
-/* 
+/*
     imports
   */
-import { reactive, ref } from "vue";
-import { useStoreEntries } from "src/stores/storeEntries";
+import { reactive, ref } from "vue"
+import { useStoreEntries } from "src/stores/storeEntries"
+import { useLightOrDark } from "src/use/useLightOrDark"
 import vSelectAll from 'src/directives/directiveSelectAll'
 
-/* 
+/*
     stores
   */
 const storeEntries = useStoreEntries();

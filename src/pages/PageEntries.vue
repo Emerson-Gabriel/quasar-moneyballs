@@ -7,19 +7,23 @@
       >
         <NothingHere v-if="!storeEntries.entries.length" />
       </transition>
-      <q-list 
+      <q-list
         v-if="storeEntries.entries.length"
         class="entries"
       >
-        <Sortable 
+        <Sortable
           @end="storeEntries.sortEnd"
-          :list="storeEntries.entries" 
+          :list="storeEntries.entries"
           :options="{ handle: '.handle' }"
-          item-key="id" 
+          item-key="id"
           tag="div"
         >
           <template #item="{ element, index }">
-            <Entry :key="element.id" :entry="element" />
+            <Entry
+              :key="element.id"
+              :entry="element"
+              :index="index"
+            />
           </template>
         </Sortable>
       </q-list>
@@ -39,7 +43,7 @@
 </template>
 
 <script setup>
-/* 
+/*
     imports
   */
 import { useStoreEntries } from "src/stores/storeEntries";

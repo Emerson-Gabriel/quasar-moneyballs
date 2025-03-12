@@ -3,6 +3,16 @@
     letter-spacing: 0;
 }
 
+/* dark */
+.body--dark{
+    .bg-primary {
+        background-color: $primary-dark!important;
+    }
+    .q-drawer {
+        border: none;
+    }
+}
+
 .q-popup-edit__buttons{
     .q-btn {
         text-transform: none;
@@ -29,11 +39,18 @@ input::-webkit-inner-spin-button {
 .entries {
     .q-slide-item {
         border: 1px solid rgba(0, 0, 0, 0.12);
+        .body--dark & {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
         &:not(:first-child) {
             margin-top: -1px;
         }
     }
     .sortable-ghost {
         opacity: 0;
+    }
+    .running-bal{
+        right: -5px;
+        bottom: -9px;
     }
 }

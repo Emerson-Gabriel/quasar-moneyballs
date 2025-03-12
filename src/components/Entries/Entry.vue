@@ -4,7 +4,11 @@
     @right="onEntrySlideRight"
     left-color="positive"
     right-color="negative"
-    :class="{ 'bg-grey-2' : entry.paid }"
+    :class="
+      !entry.paid
+      ? useLightOrDark('bg-white', 'bg-black')
+      : useLightOrDark('bg-grey-2', 'bg-grey-9')
+    "
   >
     <template v-slot:left>
             <q-icon name="done" />
@@ -13,18 +17,20 @@
       <q-icon name="delete" />
     </template>
 
-    <q-item>
-      <q-item-section class="text-weight-bold" 
+    <q-item
+      class="row"
+    >
+      <q-item-section class="text-weight-bold col"
         :class="[
           useAmountColorClass(entry.amount),
           { 'text-strike' : entry.paid }
         ]"
       >
         {{ entry.name }}
-        <q-popup-edit 
+        <q-popup-edit
           @save="onNameUpdate"
-          :model-value="entry.name" 
-          auto-save 
+          :model-value="entry.name"
+          auto-save
           v-slot="scope"
           anchor="top left"
           :offset="[17,12]"
@@ -32,54 +38,68 @@
           label-set="Ok"
           buttons=""
         >
-          <q-input 
-            v-model="scope.value" 
-            dense 
+          <q-input
+            v-model="scope.value"
+            dense
             input-class="text-weight-bold letter-spacing-nome"
-            autofocus 
-            @keyup.enter="scope.set" 
+            autofocus
+            @keyup.enter="scope.set"
             v-select-all
           />
         </q-popup-edit>
       </q-item-section>
 
       <q-item-section
-        class="text-weight-bold"
+        class="text-weight-bold relative-position col"
         :class="[
-          useAmountColorClass(entry.amount),
-          { 'text-strike' : entry.paid }
+          useAmountColorClass(entry.amount)
         ]"
         side
       >
-        {{ useCurrencify(entry.amount) }}
-        <q-popup-edit 
+        <span
+          :class="{ 'text-strike' : entry.paid }"
+        >
+          {{ useCurrencify(entry.amount) }}
+        </span>
+        <q-popup-edit
           @save="onAmountUpdate"
-          :model-value="entry.amount" 
-          auto-save 
+          :model-value="entry.amount"
+          auto-save
           v-slot="scope"
-          anchor="top left"
+          anchor="top right"
+          self="top right"
           :offset="[17,12]"
           :cover="false"
           label-set="Ok"
           buttons=""
         >
-          <q-input 
-            v-model.number ="scope.value" 
-            @keyup.enter="scope.set" 
+          <q-input
+            v-model.number ="scope.value"
+            @keyup.enter="scope.set"
             input-class="text-weight-bold letter-spacing-nome text-right"
             type="number"
             step="0.01"
             v-select-all
-            autofocus 
-            dense 
+            autofocus
+            dense
           />
         </q-popup-edit>
+        <q-chip
+          v-if="storeSettings.settings.showRunningBalance"
+          :class="useAmountColorClass(storeEntries.runningBalances[index])"
+          class="absolute-bottom-right running-bal"
+          size="9px"
+          outline
+          dense
+        >
+          {{ useCurrencify(storeEntries.runningBalances[index]) }}
+        </q-chip>
       </q-item-section>
       <q-item-section
         v-if="storeEntries.options.sort"
         side
       >
-        <q-icon 
+        <q-icon
           class="handle"
           name="reorder"
           color="primary "
@@ -92,16 +112,19 @@
 <script setup>
 import { useQuasar } from 'quasar'
 import { useStoreEntries } from 'src/stores/storeEntries'
+import { useStoreSettings } from 'src/stores/storeSettings'
 import { useCurrencify } from 'src/use/useCurrencify'
 import { useAmountColorClass } from 'src/use/useAmountColorClass'
+import { useLightOrDark } from 'src/use/useLightOrDark'
 /* quando for chamar directive precisa ser no padrão com - e minusculo ex: v-select-all */
 import vSelectAll from 'src/directives/directiveSelectAll'
-/* 
+/*
     stores
   */
 const storeEntries = useStoreEntries();
+const storeSettings = useStoreSettings();
 
-/* 
+/*
   props
   aqui estarei acessando as props que foi passada para esse componente que no caso é os entrys
 */
@@ -109,11 +132,15 @@ const props = defineProps({
   entry: {
     type: Object,
     required: true
+  },
+  index: {
+    type: Number,
+    required: true
   }
 })
 
-/* 
-  quasar 
+/*
+  quasar
 */
 const $q = useQuasar();
 
@@ -125,6 +152,13 @@ const onEntrySlideLeft = ({ reset }) => {
 }
 
 const onEntrySlideRight = ({ reset }) => {
+  if (storeSettings.settings.promptToDelete)
+    promptToDelete(reset)
+  else
+    storeEntries.deleteEntry(props.entry.id)
+};
+
+const promptToDelete = reset => {
   $q.dialog({
     title: "Delete Entry",
     message: `
@@ -152,7 +186,7 @@ const onEntrySlideRight = ({ reset }) => {
   .onCancel(() => {
     reset();
   });
-};
+}
 
 /* actions amount and name */
 const onNameUpdate = (value) => {

@@ -4,7 +4,7 @@ import { uid, Notify, event } from "quasar";
 
 export const useStoreEntries = defineStore('entries', () => {
 
-    /* 
+    /*
         state
     */
     const entries = ref([
@@ -38,7 +38,7 @@ export const useStoreEntries = defineStore('entries', () => {
         sort: false
     })
 
-    /* 
+    /*
         getters
     */
     const balance = computed(() => {
@@ -55,8 +55,22 @@ export const useStoreEntries = defineStore('entries', () => {
         }, 0)
     });
 
+    const runningBalances = computed(() => {
+      let runningBalances = [],
+        currentRunningBalance = 0
 
-    /* 
+      if (entries.value.length) {
+        entries.value.forEach(entry => {
+          let entryAmount = entry.amount ? entry.amount : 0
+          currentRunningBalance = currentRunningBalance + entryAmount
+          runningBalances.push(currentRunningBalance)
+        })
+      }
+
+      return runningBalances
+    })
+
+    /*
      actions
     */
     const addEntry = addEntryForm => {
@@ -91,14 +105,15 @@ export const useStoreEntries = defineStore('entries', () => {
 
     /* return */
 
-    return { 
+    return {
         /* state */
         entries,
         options,
-        
+
         /* getters */
         balance,
         balancePaid,
+        runningBalances,
 
         /* actions */
         addEntry,
