@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
-import { ref, computed, reactive } from "vue";
-import { uid, Notify, event } from "quasar";
+import { ref, computed, reactive, watch, nextTick } from "vue";
+import { uid, Notify, event, LocalStorage } from "quasar";
 
 export const useStoreEntries = defineStore('entries', () => {
 
@@ -8,7 +8,7 @@ export const useStoreEntries = defineStore('entries', () => {
         state
     */
     const entries = ref([
-        {
+        /* {
             id: "id0",
             name: "Salário",
             amount: 2999.99,
@@ -31,12 +31,22 @@ export const useStoreEntries = defineStore('entries', () => {
             name: "Desconhecido",
             amount: 0,
             paid: false
-        },
+        }, */
     ]);
+
+    watch(entries.value, () => {
+      saveEntries()
+    })
 
     const options = reactive ({
         sort: false
     })
+
+
+    const loadEntries = () => {
+      const savedEntries = LocalStorage.getItem('entries')
+      if (savedEntries) Object.assign(entries.value, savedEntries)
+    }
 
     /*
         getters
@@ -81,6 +91,7 @@ export const useStoreEntries = defineStore('entries', () => {
     const deleteEntry = entryId => {
         const index = getEntryIndexById(entryId)
         entries.value.splice(index, 1)
+        removeSlideItemIfExists(entryId)
         Notify.create({
             message: 'Entry deleted',
             position: 'top'
@@ -98,9 +109,27 @@ export const useStoreEntries = defineStore('entries', () => {
         entries.value.splice(newIndex, 0, movedEntry)
     }
 
+    const saveEntries = () => {
+      LocalStorage.set('entries', entries.value)
+    }
+
     /* helpers */
     const getEntryIndexById = entryId => {
         return entries.value.findIndex(entry => entryId === entry.id)
+    }
+
+    const removeSlideItemIfExists = entryId => {
+      /*
+        hacky fix: when deleting (after sorting),
+        sometimes the slide item is not removed
+        from the dom. this will remove the slide
+        item from the dom if it still existir
+        (after entry removed from entries array)
+      */
+      nextTick(() => {
+        const slideItem = document.querySelector(`#id-${ entryId }`)
+        if (slideItem) slideItem.remove()
+      })
     }
 
     /* return */
@@ -119,6 +148,7 @@ export const useStoreEntries = defineStore('entries', () => {
         addEntry,
         deleteEntry,
         updateEntry,
-        sortEnd
+        sortEnd,
+        loadEntries
     }
 })

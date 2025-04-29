@@ -58,7 +58,7 @@ export default defineConfig((/* ctx */) => {
 
       // extendViteConf (viteConf) {},
       // viteVuePluginOptions: {},
-      
+
       // vitePlugins: [
       //   [ 'package-name', { ..pluginOptions.. }, { server: true, client: true } ]
       // ]
@@ -86,7 +86,7 @@ export default defineConfig((/* ctx */) => {
 
       // Quasar plugins
       plugins: [
-        'Dialog', 'Notify'
+        'Dialog', 'Notify', 'LocalStorage'
       ]
     },
 
