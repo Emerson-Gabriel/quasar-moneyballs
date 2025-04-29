@@ -184,6 +184,7 @@ export default defineConfig((/* ctx */) => {
 
         // Windows only
         // win32metadata: { ... }
+        platform: 'win32'
       },
 
       builder: {
